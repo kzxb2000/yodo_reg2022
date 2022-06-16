@@ -1,0 +1,216 @@
+githubにローカルリポジトリ作る
+SourceTreeをインストール
+sourcetree github 連携は以下を参照
+https://ics.media/entry/15195/
+
+2台目（さくら）以降は、単なるFTPのみにするので、【１の番外編その２】と【３】【６】
+特にFTPなどを使ってリポジトリと同名のディレクトリを作り忘れないように。
+https://zenn.dev/mamezou/articles/23a221c7287cf6
+
+
+
+【環境構築】
+ローカルをUbhntu
+ロリポップをWindows powershellにします。
+https://dfruit.page/git_clone_to_lolipop/を参考に進める。
+
+UbuntuからはアクセスできるWindowsのドライブ（CドライブとかDドライブとか）は以下のコマンドで確認できる。
+私の環境ではCドライブとDドライブが存在するので以下のように表示される。
+				% df -h
+				Filesystem      Size  Used Avail Use% Mounted on
+				rootfs          454G  114G  341G  25% /
+				none            454G  114G  341G  25% /dev
+				none            454G  114G  341G  25% /run
+				none            454G  114G  341G  25% /run/lock
+				none            454G  114G  341G  25% /run/shm
+				none            454G  114G  341G  25% /run/user
+				cgroup          454G  114G  341G  25% /sys/fs/cgroup
+				C:\             454G  114G  341G  25% /mnt/c
+				D:\             449G  314G  136G  70% /mnt/d
+
+
+【１】SSHを設定する
+＞Windows 10 の ssh-agent (OpenSSH) を利用する設定
+https://laboradian.com/use-ssh-agent-wsl/
+(1) OpenSSH Authentication Agent サービスを動かす
+(2) ssh-agent-wsl をダウンロードして配置する
+
+【１】シェルを用意する。
+＞Windows powershell（いらないかも）
+https://news.mynavi.jp/techplus/article/20220430-2330411/
+Windowsのスタートメニューで「Windows の機能」と検索し、
+Linux用Windowsサブシステム」にチェック
+
+＞MSストアからUbuntu 22.04 LTS」をインストール
+https://apps.microsoft.com/store/detail/ubuntu-2004/9N6SVWS3RX71?hl=en-us&gl=US
+Enter new UNIX username: jitaku
+New password:tg*******
+
+Windowsのファイルシステム配下にあるディレクトリ上だと、パーミッション変更できない様なので
+原則LINUXディレクトリを変更しないで進めます。
+
+
+【１の番外編】事前確認して
+（ローカル）OpenSSH_8.9p1 Ubuntu-3, OpenSSL 3.0.2 15 Mar 2022
+（ロリポップ）OpenSSH_7.4p1, OpenSSL 1.0.2k-fips  26 Jan 2017
+OpenSSH8.8からSHA-1のRSA鍵は無効になっていたのが原因で、サーバー側のOpenSSLのバージョンが8.8以上か
+https://www.openssh.com/txt/release-8.8
+ローカルの/etc/ssh/ssh_configに、パラメータを追記しないとアクセス拒否されます。
+
+＜対策＞
+ローカルをUbhntuで編集します。
+sudo su - でrootになる。
+chmod 777 /etc/ssh/ssh_config で書き込み可
+vimで修正し、最後の行に以下を追加。
+＞iでインサートモード
+HostKeyAlgorithms=+ssh-rsa
+PubkeyAcceptedAlgorithms=+ssh-rsa
+escで出て
+＞:w上書き
+＞:q　vim終了
+
+
+【１の番外編その２】さくらサーバーはsshではなくhttps認証でクローンするしかない。
+さくらのスタンダードはssh_configが書き換えられないさそうだし、1回ぽっきりの作業だから。
+以下のサイト通りに進める。
+https://marble-heroes.com/blog/4tbbonj05g
+
+
+
+
+
+
+
+【２】秘密鍵を生成する
+Ubuntuで
+jitaku@DESKTOP-8FUSQOF:~$ ssh-keygen
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/jitaku/.ssh/id_rsa):
+Created directory '/home/jitaku/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/jitaku/.ssh/id_rsa
+Your public key has been saved in /home/jitaku/.ssh/id_rsa.pub
+The key fingerprint is:
+SHA256:jJbYBF/0mXnhBQpOdMKoa4h4VUOomyaJAT9Zd0roEjg jitaku@DESKTOP-8FUSQOF
+The key's randomart image is:
++---[RSA 3072]----+
+| .  .+.=B . o..  |
+|E . +o*+o= * o   |
+|.o * =o+. * o    |
+|. * ++.+   .     |
+|o+ B..= S        |
+|* * o.           |
+| + .             |
+|                 |
+|                 |
++----[SHA256]-----+
+
+【２の２】秘密鍵を生成する
+# eval `ssh-agent` ★Ubuntuで、これをやらないとWindowsのターミナルでssh-addは使えません！
+
+$ ssh-add -l
+The agent has no identities
+無ければ次のコマンドでssh-agentに秘密鍵を登録
+
+ssh-add ~/.ssh/id_rsa
+もう一度確認してみると
+
+$ ssh-add -l
+2048 SHA256:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+これで、ssh-agentに秘密鍵が登録されてることが確認できました。
+
+【３】公開鍵をロリポップサーバーに登録する
+＜さくら最初の場合＞
+jitaku@DESKTOP-8FUSQOF:~$ ssh checklab@checklab.sakura.ne.jp
+ログインを確認したら、ログアウトしてローカルに戻る
+jitaku@DESKTOP-8FUSQOF:~$ ssh-copy-id -i ~/.ssh/id_rsa.pub -p 22 checklab@checklab.sakura.ne.jp
+
+
+＜ロリポップ＞
+ssh-copy-id -i ~/.ssh/id_rsa.pub -p 2222 checklab@checklab.sakura.ne.jp
+
+
+jitaku@DESKTOP-8FUSQOF:~$ ssh-copy-id -i ~/.ssh/id_rsa.pub -p 2222 sub.jp-azasu@ssh.lolipop.jp
+
+
+
+
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/jitaku/.ssh/id_rsa.pub"
+The authenticity of host '[ssh.lolipop.jp]:2222 ([133.130.35.108]:2222)' can't be established.
+RSA key fingerprint is SHA256:1Rt0rvYV+xZGCMAzm6BKjqAIPWXYYDX0bYK5CikAvCE.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+sub.jp-azasu@ssh.lolipop.jp's password:  ★ここはロリポップのSSHパスワード
+client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signature
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh -p '2222' 'sub.jp-azasu@ssh.lolipop.jp'"                                 and check to make sure that only the key(s) you wanted were added.                                                      
+【４】.ssh/configにロリポップサーバーを追加
+jitaku@DESKTOP-8FUSQOF:~$ vim .ssh/config 
+host lolipop
+	HostName ssh.lolipop.jp 
+	Port 2222
+	User sub.jp-azasu
+	IdentityFile ~/.ssh/id_rsa
+
+このホストの設定が完了すると、ssh lolipopだけでパスワードなしでサーバーにログインできます。
+一度exitして再ログインする事！（必須）
+jitaku@DESKTOP-8FUSQOF:~$ ssh lolipop
+client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signature
+[sub.jp-azasu@spd101 ~]$  ←←←これはロリポップのサーバーにログインしているということです。
+
+
+【５】公開鍵をGitHUBに登録します。
+jitaku@DESKTOP-8FUSQOF:~$ vim ~/.ssh/id_rsa.pub で、以下の公開鍵が表示されるのでコピーします。
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjyrE+Q7sbW2Q6zKLBdIJvuEBBVK12CDqo9Sxkuuf3H2kmg4ovMQj4mBeAHzHWXAQvBqgsN+iE2H+C4n2xUq9LqRgoHWxyF3/hQeUDeiCZZWsdrVvKsQdAyOs2a24fjJOjfXm1kSEdc28GFXwcQZWy2xLMb3KbJsRbEV4zGQYuX/CW7j9pxBzFrv0GpKE5X6qTBmuhGjQPVnQc1OGvUxYaudRqPKNB1YrjmvL8OggJb6grp4jFoSYDtkE0Ki8s6yDGZFqdHkoPaCoCrxlB8PrKCeXtWzmHVulbAFdsANmLbhcQG1bjT12tOX6dZkbQe4V6mjY0yNdpLbh/LFGJkmf4bvkE9Xdxi81h6yVEseOQ86hNmnAs/z+98H2Lib4BbkWxzQpV6jyTZRgyx6q0R+7oJ0aLtN3yOSrz3488lFOk2TqoX8MEzrTeYuOJ8FnWDWYSyYA5tsvUW2dmfkb3IdZR61S4juMF5rOj7dJkBpH03XrX3RLiaqPxP80f1RGNjM8= jitaku@DESKTOP-8FUSQOF
+
+
+【６】サーバー側にgithubをHOSTにする設定をします。
+jitaku@DESKTOP-8FUSQOF:~$ ssh lolipop
+client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signature
+[sub.jp-azasu@spd101 ~]$ vi ~/.ssh/config
+configを開いたら、以下を入力
+--------------------------------
+Host github.com  ←★この名前は、.comが抜けていると一致しないのでダメです。
+  HostName github.com
+  Port 22 ←★github.comのポートは２２です！
+  User git
+  ForwardAgent yes
+--------------------------------
+このForwardAgent yesがエージェント転送機能を有効にしてます。
+一度ロリポップサーバーからログアウトして
+ssh -A lolipopで
+再度ロリポップサーバーにログインするとエージェント転送機能でGitHubとの連携ができているはず。
+
+【７】githubから、SSHのsshkeyを取得してロリポップへ設定
+
+githubのページより、各リポジトリのcloneコードをコピペしてくる
+
+【８】サーバーから操作して、リポジトリをクローンします。
+[sub.jp-azasu@spd101 ~]$ ls
+web
+※ここ間違っているかも。webの中でやるべきだよね。
+
+
+[sub.jp-azasu@spd101 ~]$ git clone git@github.com:kzxb2000/workf2022.git workf2022
+Cloning into 'workf2022'...
+remote: Enumerating objects: 49, done.
+remote: Counting objects: 100% (49/49), done.
+remote: Compressing objects: 100% (32/32), done.
+remote: Total 49 (delta 14), reused 35 (delta 5), pack-reused 0
+Receiving objects: 100% (49/49), 5.05 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (14/14), done.
+[sub.jp-azasu@spd101 ~]$
+
+
+
+【９】
+githubにFTPパスワードなど4つ入れる
+
+
+

@@ -31,5 +31,4 @@ jobs:
       #    server-dir: ${{ secrets.FTP_REMOTE_ROOT }}
           server-dir: /home/meijie/www/yodo_reg2022/
       
-      #    local-dir: ./kzxb2000/workf2022/
 
