@@ -3,7 +3,7 @@ SourceTreeをインストール
 sourcetree github 連携は以下を参照
 https://ics.media/entry/15195/
 
-2台目（さくら）以降は、単なるFTPのみにするので、【１の番外編その２】と【３】【６】
+2台目（さくら）以降は、単なるFTPのみにするので、【３の番外編その１】と【４】【６】
 特にFTPなどを使ってリポジトリと同名のディレクトリを作り忘れないように。
 https://zenn.dev/mamezou/articles/23a221c7287cf6
 
@@ -50,7 +50,7 @@ Windowsのファイルシステム配下にあるディレクトリ上だと、�
 原則LINUXディレクトリを変更しないで進めます。
 
 
-【１の番外編】事前確認して
+【１の番外編】事前確認して（アップグレードできない。）
 （ローカル）OpenSSH_8.9p1 Ubuntu-3, OpenSSL 3.0.2 15 Mar 2022
 （ロリポップ）OpenSSH_7.4p1, OpenSSL 1.0.2k-fips  26 Jan 2017
 OpenSSH8.8からSHA-1のRSA鍵は無効になっていたのが原因で、サーバー側のOpenSSLのバージョンが8.8以上か
@@ -68,15 +68,6 @@ PubkeyAcceptedAlgorithms=+ssh-rsa
 escで出て
 ＞:w上書き
 ＞:q　vim終了
-
-
-【１の番外編その２】さくらサーバーはsshではなくhttps認証でクローンするしかない。
-さくらのスタンダードはssh_configが書き換えられないさそうだし、1回ぽっきりの作業だから。
-以下のサイト通りに進める。
-https://marble-heroes.com/blog/4tbbonj05g
-
-
-
 
 
 
@@ -121,20 +112,10 @@ $ ssh-add -l
 これで、ssh-agentに秘密鍵が登録されてることが確認できました。
 
 【３】公開鍵をロリポップサーバーに登録する
-＜さくら最初の場合＞
-jitaku@DESKTOP-8FUSQOF:~$ ssh checklab@checklab.sakura.ne.jp
-ログインを確認したら、ログアウトしてローカルに戻る
-jitaku@DESKTOP-8FUSQOF:~$ ssh-copy-id -i ~/.ssh/id_rsa.pub -p 22 checklab@checklab.sakura.ne.jp
-
-
 ＜ロリポップ＞
-ssh-copy-id -i ~/.ssh/id_rsa.pub -p 2222 checklab@checklab.sakura.ne.jp
 
 
 jitaku@DESKTOP-8FUSQOF:~$ ssh-copy-id -i ~/.ssh/id_rsa.pub -p 2222 sub.jp-azasu@ssh.lolipop.jp
-
-
-
 
 /usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/jitaku/.ssh/id_rsa.pub"
 The authenticity of host '[ssh.lolipop.jp]:2222 ([133.130.35.108]:2222)' can't be established.
@@ -149,7 +130,8 @@ client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0:
 Number of key(s) added: 1
 
 Now try logging into the machine, with:   "ssh -p '2222' 'sub.jp-azasu@ssh.lolipop.jp'"                                 and check to make sure that only the key(s) you wanted were added.                                                      
-【４】.ssh/configにロリポップサーバーを追加
+
+【４】.ssh/configにロリポップ情報を追加
 jitaku@DESKTOP-8FUSQOF:~$ vim .ssh/config 
 host lolipop
 	HostName ssh.lolipop.jp 
@@ -172,7 +154,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjyrE+Q7sbW2Q6zKLBdIJvuEBBVK12CDqo9Sxkuuf3
 
 【６】サーバー側にgithubをHOSTにする設定をします。
 jitaku@DESKTOP-8FUSQOF:~$ ssh lolipop
-client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signature
+client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signaturecd。ｓｓｈ
 [sub.jp-azasu@spd101 ~]$ vi ~/.ssh/config
 configを開いたら、以下を入力
 --------------------------------
@@ -189,15 +171,23 @@ ssh -A lolipopで
 
 【７】githubから、SSHのsshkeyを取得してロリポップへ設定
 
-githubのページより、各リポジトリのcloneコードをコピペしてくる
+githubのページより、各リポジトリのcloneコードをコピペしてくる【８】で使用します。
 
 【８】サーバーから操作して、リポジトリをクローンします。
+クローンを設置するディレクトリに移動します。
+
 [sub.jp-azasu@spd101 ~]$ ls
 web
+
+
+
+
+
 ※ここ間違っているかも。webの中でやるべきだよね。
 
-
-[sub.jp-azasu@spd101 ~]$ git clone git@github.com:kzxb2000/workf2022.git workf2022
+[sub.jp-azasu@spd101 ~]$ git clone git@github.com:kzxb2000/workf2：022.git workf2022
+（例）git clone git@github.com:kzxb2000/ec_helper_test.git ec_helper_test
+      git clone git@github.com:kzxb2000/ec_helper_test.git ec_helper_test
 Cloning into 'workf2022'...
 remote: Enumerating objects: 49, done.
 remote: Counting objects: 100% (49/49), done.
@@ -214,3 +204,57 @@ githubにFTPパスワードなど4つ入れる
 
 
 
+
+＜さくら最初の場合＞
+
+【１】sshでさくらにログイン
+【２】ローカル.ssh/configにさくら情報を追加
+jitaku@DESKTOP-8FUSQOF:~$ vim .ssh/config 
+host checklab
+	HostName checklab.sakura.ne.jp
+	Port 22
+	User checklab
+	IdentityFile ~/.ssh/id_rsa
+
+このホストの設定が完了すると、ssh checklabだけでパスワードなしでサーバーにログインできます。
+一度exitして再ログインする事！（必須）
+jitaku@DESKTOP-8FUSQOF:~$ ssh checklab
+client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signature
+[sub.jp-azasu@spd101 ~]$  ←←←これはさくらのサーバーにログインしているということです。
+
+
+【３】サーバーからSSH、これはいらないかも
+
+jitaku@DESKTOP-8FUSQOF:~$ ssh checklab
+client_global_hostkeys_private_confirm: server gave bad signature for RSA key 0: incorrect signaturecd。ｓｓｈ
+[sub.jp-azasu@spd101 ~]$ vi ~/.ssh/config
+configを開いたら、以下を入力
+--------------------------------
+Host github.com  ←★この名前は、.comが抜けていると一致しないのでダメです。
+  HostName github.com
+  Port 22 ←★github.comのポートは２２です！
+  User git
+  ForwardAgent yes
+--------------------------------
+このForwardAgent yesがエージェント転送機能を有効にしてます。
+一度さくらサーバーからログアウトして
+ssh -A checklabで
+再度さくらサーバーにログインするとエージェント転送機能でGitHubとの連携ができているはず。
+
+【４】公開鍵をコピーする
+# eval `ssh-agent` ★Ubuntuで、これをやらないとWindowsのターミナルでssh-addは使えません！
+
+jitaku@DESKTOP-8FUSQOF:~$ ssh checklab@checklab.sakura.ne.jp
+ログインを確認したら、ログアウトしてローカルに戻る
+jitaku@DESKTOP-8FUSQOF:~$ ssh-copy-id -i ~/.ssh/id_rsa.pub -p 22 checklab@checklab.sakura.ne.jp
+jitaku@DESKTOP-8FUSQOF:~$ ssh checklab で、ログイン
+パスワードが聞かれなければOK
+
+【５】クローンする
+
+さくらのスタンダードはssh_configが書き換えられないさそうだし、1回ぽっきりの作業だから。
+以下のサイト通りに進める。
+https://marble-heroes.com/blog/4tbbonj05g
+wwwディレクトリに入り、git clone https://github.com/kzxb2000/ec_helper_test.gitを実行すると
+ディレクトリを聞いて決ます。
+パスワードは個人用の認証トークンを使います。
