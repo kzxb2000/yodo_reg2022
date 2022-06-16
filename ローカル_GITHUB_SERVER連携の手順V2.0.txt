@@ -255,6 +255,7 @@ jitaku@DESKTOP-8FUSQOF:~$ ssh checklab で、ログイン
 さくらのスタンダードはssh_configが書き換えられないさそうだし、1回ぽっきりの作業だから。
 以下のサイト通りに進める。
 https://marble-heroes.com/blog/4tbbonj05g
+https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-token
 wwwディレクトリに入り、git clone https://github.com/kzxb2000/ec_helper_test.gitを実行すると
 ディレクトリを聞いて決ます。
 パスワードは個人用の認証トークンを使います。
